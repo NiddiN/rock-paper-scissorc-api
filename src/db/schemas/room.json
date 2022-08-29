@@ -1,0 +1,22 @@
+{
+  "uid": {
+    "type": "String",
+    "required": true,
+    "index": true
+  },
+  "name": {
+    "type": "String",
+    "required": true,
+    "index": true
+  },
+  "maxPlayers": {
+    "type": "Number",
+    "required": true,
+    "default": 2
+  },
+  "playersAmount": {
+    "type": "Number",
+    "required": true,
+    "default": 0
+  }
+}

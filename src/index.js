@@ -48,17 +48,24 @@ function startApp() {
     return element2.userId;
   }
 
-  app.get("/", (req, res) => {
-    res.send("<h1>Hello world</h1>");
-  });
-
   io.on("connection", (socket) => {
-    console.log("a user connected");
+    console.log("User connected");
 
-    socket.on("userConnectedToTheRoom", ({ user, roomId }) => {
-      if (game.players.length === 2) {
-        game.players = [];
+    socket.on("userJoinedTheRoom", async ({ user, roomId }) => {
+      console.log("User joined the room");
+
+      const roomModel = mongoose.models.room;
+      const room = await roomModel.findOne({ uid: roomId });
+
+      if (!room) {
+        return;
       }
+
+      if (room.maxPlayers === room.playersAmount) {
+        return;
+      }
+
+      await roomModel.updateOne({ uid: room.uid }, { playersAmount: room.playersAmount + 1 });
 
       socket.join(roomId);
 
@@ -66,6 +73,19 @@ function startApp() {
 
       io.to(roomId).emit("gamePlayers", { players: [...game.players] });
     });
+
+    socket.on("userLeftTheRoom", async ({ user, roomId }) => {
+      console.log("User left the room");
+
+      const roomModel = mongoose.models.room;
+      const room = await roomModel.findOne({ uid: roomId });
+
+      await roomModel.updateOne({ uid: room.uid }, { playersAmount: room.playersAmount - 1 });
+
+      game.players = game.players.filter(players => players.id === user.id);
+
+      io.to(roomId).emit("gamePlayers", { players: [...game.players] });
+    })
 
     socket.on("elementChose", ({ roomId, ...args }) => {
       game.choseElements.push(args);
